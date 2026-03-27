@@ -140,8 +140,9 @@ describe("CORS Origin Whitelist", () => {
   it("should use default localhost origin when ALLOWED_ORIGINS is not set", () => {
     delete process.env.ALLOWED_ORIGINS;
 
-    const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
-      ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim())
+    const envValue = process.env.ALLOWED_ORIGINS;
+    const ALLOWED_ORIGINS = envValue
+      ? (envValue as string).split(",").map((origin: string) => origin.trim())
       : ["http://localhost:5173"];
 
     expect(ALLOWED_ORIGINS).toEqual(["http://localhost:5173"]);

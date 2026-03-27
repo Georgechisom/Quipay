@@ -1,9 +1,6 @@
 use crate::{PayrollVault, PayrollVaultClient, StateKey};
 use quipay_common::QuipayError;
-use soroban_sdk::{
-    Address, Env, Vec,
-    testutils::{Address as _, Ledger},
-};
+use soroban_sdk::{testutils::{Address as _, Ledger}, Address, Env, Vec};
 
 #[test]
 fn test_duplicate_signers_rejected() {
@@ -20,8 +17,12 @@ fn test_duplicate_signers_rejected() {
     // Initialize the vault
     client.initialize(&admin);
 
-    // Add signer1 twice (simulating duplicate)
-    client.add_signer(&signer1);
+    // Propose an upgrade first
+    let new_wasm_hash = soroban_sdk::BytesN::from_array(&env, &[0u8; 32]);
+    client.propose_upgrade(&new_wasm_hash, &(2, 0, 0));
+
+    // Fast forward time past the timelock (48 hours)
+    env.ledger().set_timestamp(env.ledger().timestamp() + (48 * 60 * 60) + 1);
 
     // Manually create a duplicate signer list to test the deduplication check
     let mut signers = Vec::new(&env);
@@ -36,13 +37,18 @@ fn test_duplicate_signers_rejected() {
         env.storage().persistent().set(&StateKey::Threshold, &2u32);
     });
 
-    // Try to execute an operation that requires multisig auth
+    // Try to execute the upgrade which requires multisig auth
     // This should fail due to duplicate signers
-    let token = Address::generate(&env);
-    let result = client.try_set_authorized_contract(&token);
+    let result = client.try_execute_upgrade(&(2, 0, 0));
 
     // The operation should fail with DuplicateSigner error
     assert!(result.is_err());
+    match result {
+        Err(Ok(err)) => {
+            assert_eq!(err, QuipayError::DuplicateSigner);
+        }
+        _ => panic!("Expected DuplicateSigner error"),
+    }
 }
 
 #[test]
