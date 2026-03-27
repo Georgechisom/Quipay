@@ -2,7 +2,6 @@ use super::*;
 
 #[soroban_sdk::contractimpl]
 impl PayrollStream {
-  
     pub fn pause_stream(env: Env, stream_id: u64, employer: Address) -> Result<(), QuipayError> {
         Self::require_not_paused(&env)?;
         employer.require_auth();
@@ -42,7 +41,6 @@ impl PayrollStream {
         Ok(())
     }
 
-    
     pub fn resume_stream(env: Env, stream_id: u64, employer: Address) -> Result<(), QuipayError> {
         Self::require_not_paused(&env)?;
         employer.require_auth();

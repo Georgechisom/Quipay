@@ -1,8 +1,8 @@
 use crate::{PayrollVault, PayrollVaultClient, StateKey};
 use quipay_common::QuipayError;
 use soroban_sdk::{
-    testutils::{Address as _, Ledger},
     Address, Env, Vec,
+    testutils::{Address as _, Ledger},
 };
 
 #[test]
@@ -22,14 +22,14 @@ fn test_duplicate_signers_rejected() {
 
     // Add signer1 twice (simulating duplicate)
     client.add_signer(&signer1);
-    
+
     // Manually create a duplicate signer list to test the deduplication check
     let mut signers = Vec::new(&env);
     signers.push_back(admin.clone());
     signers.push_back(signer1.clone());
     signers.push_back(signer1.clone()); // Duplicate!
     signers.push_back(signer2.clone());
-    
+
     // Manually set the signers list with duplicates
     env.as_contract(&contract_id, || {
         env.storage().persistent().set(&StateKey::Signers, &signers);
@@ -40,7 +40,7 @@ fn test_duplicate_signers_rejected() {
     // This should fail due to duplicate signers
     let token = Address::generate(&env);
     let result = client.try_set_authorized_contract(&token);
-    
+
     // The operation should fail with DuplicateSigner error
     assert!(result.is_err());
 }
@@ -63,14 +63,14 @@ fn test_unique_signers_accepted() {
     // Add unique signers
     client.add_signer(&signer1);
     client.add_signer(&signer2);
-    
+
     // Set threshold to 2
     client.set_threshold(&2);
 
     // Verify signers are unique
     let signers = client.get_signers();
     assert_eq!(signers.len(), 3); // admin + signer1 + signer2
-    
+
     // Verify no duplicates
     let mut i = 0;
     while i < signers.len() {
@@ -101,11 +101,11 @@ fn test_add_duplicate_signer_rejected() {
 
     // Add signer1
     client.add_signer(&signer1);
-    
+
     // Try to add signer1 again - should fail
     let result = client.try_add_signer(&signer1);
     assert!(result.is_err());
-    
+
     // Verify error is AlreadySigner
     match result {
         Err(Ok(err)) => {
@@ -134,13 +134,13 @@ fn test_multisig_threshold_with_unique_signers() {
     // Add unique signers
     client.add_signer(&signer1);
     client.add_signer(&signer2);
-    
+
     // Set threshold to 2 (requires 2 out of 3 signers)
     client.set_threshold(&2);
 
     // This should succeed with unique signers
     client.set_authorized_contract(&token);
-    
+
     // Verify the authorized contract was set
     let authorized = client.get_authorized_contract();
     assert_eq!(authorized, Some(token));
